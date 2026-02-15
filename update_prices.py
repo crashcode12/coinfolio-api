@@ -2,20 +2,20 @@ import yfinance as yf
 import json
 from datetime import datetime
 
-# סימולי ספוט (Spot) מול הדולר ושער חליפין
+# חזרנו לסימולי החוזים העתידיים (הכי יציב ביאהו) + שער השקל
 symbols = {
-    "Gold": "XAUUSD=X",
-    "Silver": "XAGUSD=X",
-    "Platinum": "XPTUSD=X",
-    "Palladium": "XPDUSD=X",
+    "Gold": "GC=F",
+    "Silver": "SI=F",
+    "Platinum": "PL=F",
+    "Palladium": "PA=F",
     "USDILS": "USDILS=X"
 }
 
 def get_price_robust(ticker_symbol):
-    """מנסה להשיג מחיר בכמה דרכים כדי לא לחזור עם ידיים ריקות"""
+    """מנגנון חכם: מנסה קודם למשוך מחיר חי, ואם הבורסה סגורה מביא מחיר אחרון"""
     ticker = yf.Ticker(ticker_symbol)
     
-    # ניסיון 1: מחיר חי מהיר
+    # ניסיון 1: מחיר חי (Fast Info)
     try:
         price = ticker.fast_info.last_price
         if price is not None and price > 0:
@@ -23,9 +23,9 @@ def get_price_robust(ticker_symbol):
     except:
         pass
 
-    # ניסיון 2: חפירה בהיסטוריה (המחיר האחרון שנסגר)
+    # ניסיון 2: חפירה בהיסטוריה של הימים האחרונים
     try:
-        hist = ticker.history(period="1d")
+        hist = ticker.history(period="5d")
         if not hist.empty:
             return hist['Close'].iloc[-1], hist['Open'].iloc[-1]
     except:
@@ -38,11 +38,10 @@ def get_data():
     prices_raw = {} 
 
     for name, ticker in symbols.items():
-        print(f"Fetching {name}...") # זה יופיע ביומן הריצה (Logs)
+        print(f"Fetching {name} ({ticker})...")
         price, prev_close = get_price_robust(ticker)
         
         if price:
-            # חישוב שינוי יומי באחוזים
             change = 0
             if prev_close:
                 change = ((price - prev_close) / prev_close) * 100
@@ -57,7 +56,7 @@ def get_data():
         else:
             print(f"Warning: Could not fetch price for {name}")
 
-    # חישוב יחס זהב/כסף (XAU/XAG)
+    # חישוב יחס זהב/כסף
     if "Gold" in prices_raw and "Silver" in prices_raw:
         ratio = prices_raw["Gold"] / prices_raw["Silver"]
         results["Gold_Silver_Ratio"] = {
@@ -65,7 +64,6 @@ def get_data():
             "updated_at": datetime.now().strftime("%Y-%m-%d %H:%M:%S")
         }
 
-    # שמירה לקובץ JSON
     with open("prices.json", "w") as f:
         json.dump(results, f, indent=4)
     print("Update complete.")
