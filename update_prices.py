@@ -39,9 +39,8 @@ def get_price_robust(ticker_symbol):
 def get_data():
     results = {}
     prices_raw = {} 
-    prev_closes_raw = {} # הוספנו מילון לשמירת מחירי הסגירה הקודמים
+    prev_closes_raw = {}
     
-    # הגדרת שעון ישראל
     israel_tz = pytz.timezone('Asia/Jerusalem')
     now_israel = datetime.now(pytz.utc).astimezone(israel_tz)
     timestamp = now_israel.strftime("%Y-%m-%d %H:%M:%S")
@@ -66,9 +65,8 @@ def get_data():
                 "updated_at": timestamp
             }
             prices_raw[name] = price
-            prev_closes_raw[name] = prev_close # שמירת מחיר הסגירה הקודם
+            prev_closes_raw[name] = prev_close
             
-            # יצירת שורה לטבלה
             name_he = translations.get(name, name)
             price_str = f"₪{rounded_price:.4f}" if name == "USDILS" else f"${rounded_price:,.2f}"
             
@@ -88,7 +86,6 @@ def get_data():
             </tr>
             """
 
-    # --- הוספת חישוב יחס זהב/כסף והשינוי היומי שלו ---
     if "Gold" in prices_raw and "Silver" in prices_raw:
         current_ratio = prices_raw["Gold"] / prices_raw["Silver"]
         
@@ -145,7 +142,7 @@ def get_data():
 </head>
 <body>
     <div class="coinfolio-widget">
-        <h3 style="margin-top: 0;">מחירי חוזים עתידיים בזמן אמת</h3>
+        <h3 style="margin-top: 0;">מחירי שוק בזמן אמת</h3>
         <table class="coinfolio-table">
             <thead>
                 <tr>
