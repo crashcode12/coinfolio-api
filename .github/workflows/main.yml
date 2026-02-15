@@ -1,0 +1,32 @@
+name: Update Coinfolio Data
+
+on:
+  schedule:
+    - cron: '*/15 * * * *' # הרצה כל 15 דקות
+  workflow_dispatch: # מאפשר הרצה ידנית
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.9'
+
+      - name: Install dependencies
+        run: pip install yfinance
+
+      - name: Run update script
+        run: python update_prices.py
+
+      - name: Commit and Push changes
+        run: |
+          git config --global user.name "GitHub Action"
+          git config --global user.email "action@github.com"
+          git add prices.json
+          git commit -m "Update prices [skip ci]" || exit 0
+          git push
