@@ -1,14 +1,9 @@
 import yfinance as yf
 import json
-import csv
-import os
-import requests
-from bs4 import BeautifulSoup
 from datetime import datetime
 import pytz
 
-# הגדרות סימולים ושמות
-symbols_yf = {
+symbols = {
     "Gold": "GC=F",
     "Silver": "SI=F",
     "Platinum": "PL=F",
@@ -25,8 +20,7 @@ translations = {
     "Gold_Silver_Ratio": "יחס זהב/כסף"
 }
 
-def get_price_yf(ticker_symbol):
-    """משיכת נתונים מיאהו פיננס (משמש כרגע כמקור ראשי ואמין)"""
+def get_price_robust(ticker_symbol):
     ticker = yf.Ticker(ticker_symbol)
     try:
         price = ticker.fast_info.last_price
@@ -42,11 +36,11 @@ def get_price_yf(ticker_symbol):
         pass
     return None, None
 
-def update_data():
+def get_data():
     results = {}
-    prices_raw = {}
-    prev_closes_raw = {}
-
+    prices_raw = {} 
+    prev_closes_raw = {} # הוספנו מילון לשמירת מחירי הסגירה הקודמים
+    
     # הגדרת שעון ישראל
     israel_tz = pytz.timezone('Asia/Jerusalem')
     now_israel = datetime.now(pytz.utc).astimezone(israel_tz)
@@ -55,9 +49,8 @@ def update_data():
 
     html_rows = ""
 
-    # איסוף הנתונים
-    for name, ticker in symbols_yf.items():
-        price, prev_close = get_price_yf(ticker)
+    for name, ticker in symbols.items():
+        price, prev_close = get_price_robust(ticker)
         
         if price:
             change = 0
@@ -73,9 +66,9 @@ def update_data():
                 "updated_at": timestamp
             }
             prices_raw[name] = price
-            prev_closes_raw[name] = prev_close
+            prev_closes_raw[name] = prev_close # שמירת מחיר הסגירה הקודם
             
-            # בניית השורה לטבלה באתר
+            # יצירת שורה לטבלה
             name_he = translations.get(name, name)
             price_str = f"₪{rounded_price:.4f}" if name == "USDILS" else f"${rounded_price:,.2f}"
             
@@ -95,9 +88,10 @@ def update_data():
             </tr>
             """
 
-    # חישוב יחס זהב/כסף והוספה שלו
+    # --- הוספת חישוב יחס זהב/כסף והשינוי היומי שלו ---
     if "Gold" in prices_raw and "Silver" in prices_raw:
         current_ratio = prices_raw["Gold"] / prices_raw["Silver"]
+        
         prev_gold = prev_closes_raw.get("Gold")
         prev_silver = prev_closes_raw.get("Silver")
         
@@ -131,25 +125,9 @@ def update_data():
         </tr>
         """
 
-    # --- יצירת 3 הקבצים ושמירתם ---
-
-    # 1. שמירת מחירי Live לקובץ JSON
     with open("prices.json", "w") as f:
         json.dump(results, f, indent=4)
 
-    # 2. שמירת הנתונים לארכיון ההיסטורי (CSV)
-    file_exists = os.path.isfile("price_history.csv")
-    with open("price_history.csv", "a", newline="") as f:
-        writer = csv.writer(f)
-        # אם הקובץ לא היה קיים קודם, ניצור כותרות לעמודות
-        if not file_exists:
-            writer.writerow(["Timestamp", "Asset", "Price", "Change"])
-        
-        # כתיבת השורות של היום
-        for name, data in results.items():
-            writer.writerow([timestamp, name, data['price'], data.get('change', 0)])
-
-    # 3. יצירת דף ה-HTML לאתר
     html_content = f"""<!DOCTYPE html>
 <html lang="he" dir="rtl">
 <head>
@@ -167,7 +145,7 @@ def update_data():
 </head>
 <body>
     <div class="coinfolio-widget">
-        <h3 style="margin-top: 0;">מחירי שוק בזמן אמת</h3>
+        <h3 style="margin-top: 0;">מחירי חוזים עתידיים בזמן אמת</h3>
         <table class="coinfolio-table">
             <thead>
                 <tr>
@@ -188,7 +166,5 @@ def update_data():
     with open("index.html", "w", encoding="utf-8") as f:
         f.write(html_content)
 
-    print(f"Update completed successfully at {timestamp}")
-
 if __name__ == "__main__":
-    update_data()
+    get_data()
