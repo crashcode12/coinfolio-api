@@ -18,7 +18,6 @@ jobs:
           python-version: '3.9'
 
       - name: Install dependencies
-        # הוספנו כאן את ספריית pytz לחישוב שעון ישראל
         run: pip install yfinance pytz
 
       - name: Run update script
@@ -28,7 +27,6 @@ jobs:
         run: |
           git config --global user.name "GitHub Action"
           git config --global user.email "action@github.com"
-          # הוספנו כאן הוראה לשמור גם את קובץ ה-index.html
           git add prices.json index.html
           git commit -m "Update prices and HTML [skip ci]" || exit 0
           git push
