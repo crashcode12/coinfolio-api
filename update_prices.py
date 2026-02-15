@@ -39,8 +39,9 @@ def get_price_robust(ticker_symbol):
 def get_data():
     results = {}
     prices_raw = {} 
+    prev_closes_raw = {} # הוספנו מילון לשמירת מחירי הסגירה הקודמים
     
-    # הגדרת אזור זמן ישראל
+    # הגדרת שעון ישראל
     israel_tz = pytz.timezone('Asia/Jerusalem')
     now_israel = datetime.now(pytz.utc).astimezone(israel_tz)
     timestamp = now_israel.strftime("%Y-%m-%d %H:%M:%S")
@@ -56,7 +57,6 @@ def get_data():
             if prev_close:
                 change = ((price - prev_close) / prev_close) * 100
             
-            # עיגול המחיר לפי סוג הנכס
             rounded_price = round(price, 4) if name == "USDILS" else round(price, 2)
             rounded_change = round(change, 2)
             
@@ -66,8 +66,9 @@ def get_data():
                 "updated_at": timestamp
             }
             prices_raw[name] = price
+            prev_closes_raw[name] = prev_close # שמירת מחיר הסגירה הקודם
             
-            # יצירת שורה לטבלה (HTML)
+            # יצירת שורה לטבלה
             name_he = translations.get(name, name)
             price_str = f"₪{rounded_price:.4f}" if name == "USDILS" else f"${rounded_price:,.2f}"
             
@@ -87,26 +88,46 @@ def get_data():
             </tr>
             """
 
+    # --- הוספת חישוב יחס זהב/כסף והשינוי היומי שלו ---
     if "Gold" in prices_raw and "Silver" in prices_raw:
-        ratio = prices_raw["Gold"] / prices_raw["Silver"]
+        current_ratio = prices_raw["Gold"] / prices_raw["Silver"]
+        
+        prev_gold = prev_closes_raw.get("Gold")
+        prev_silver = prev_closes_raw.get("Silver")
+        
+        ratio_change = 0
+        if prev_gold and prev_silver:
+            prev_ratio = prev_gold / prev_silver
+            ratio_change = ((current_ratio - prev_ratio) / prev_ratio) * 100
+            
+        rounded_ratio = round(current_ratio, 2)
+        rounded_ratio_change = round(ratio_change, 2)
+        
         results["Gold_Silver_Ratio"] = {
-            "price": round(ratio, 2),
+            "price": rounded_ratio,
+            "change": rounded_ratio_change,
             "updated_at": timestamp
         }
+        
+        if rounded_ratio_change > 0:
+            ratio_change_html = f'<span style="color: #28a745; font-weight: bold; direction: ltr; display: inline-block;">+{rounded_ratio_change}%</span>'
+        elif rounded_ratio_change < 0:
+            ratio_change_html = f'<span style="color: #dc3545; font-weight: bold; direction: ltr; display: inline-block;">{rounded_ratio_change}%</span>'
+        else:
+            ratio_change_html = f'<span style="color: #6c757d; font-weight: bold; direction: ltr; display: inline-block;">-</span>'
+
         html_rows += f"""
         <tr>
             <td style="padding: 12px; border-bottom: 1px solid #eee;">{translations['Gold_Silver_Ratio']}</td>
-            <td style="padding: 12px; border-bottom: 1px solid #eee; direction: ltr;">{round(ratio, 2)}</td>
-            <td style="padding: 12px; border-bottom: 1px solid #eee;"><span style="color: #6c757d; font-weight: bold; direction: ltr; display: inline-block;">-</span></td>
+            <td style="padding: 12px; border-bottom: 1px solid #eee; direction: ltr;">{rounded_ratio}</td>
+            <td style="padding: 12px; border-bottom: 1px solid #eee;">{ratio_change_html}</td>
             <td style="padding: 12px; border-bottom: 1px solid #eee; font-size: 0.85em; color: #888;">{time_only}</td>
         </tr>
         """
 
-    # שמירת הנתונים הגולמיים
     with open("prices.json", "w") as f:
         json.dump(results, f, indent=4)
 
-    # בניית עמוד ה-HTML המלא כולל רענון אוטומטי כל 5 דקות
     html_content = f"""<!DOCTYPE html>
 <html lang="he" dir="rtl">
 <head>
@@ -119,7 +140,6 @@ def get_data():
         .coinfolio-table th {{ color: #555; font-weight: bold; padding: 12px; border-bottom: 1px solid #eee; }}
     </style>
     <script>
-        // רענון אוטומטי של החלונית כל 5 דקות (ה-JS רץ רק על השרת של גיטהאב, לא באתר שלך)
         setTimeout(function() {{ location.reload(); }}, 300000);
     </script>
 </head>
