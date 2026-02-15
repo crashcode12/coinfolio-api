@@ -2,7 +2,7 @@ name: Update Coinfolio Data
 
 on:
   schedule:
-    - cron: '*/10 * * * *'
+    - cron: '*/15 * * * *'
   workflow_dispatch:
 
 jobs:
@@ -18,8 +18,8 @@ jobs:
           python-version: '3.9'
 
       - name: Install dependencies
-        # כאן הוספנו לרובוט את כלי הסריקה לאתרים אחרים
-        run: pip install yfinance pytz requests beautifulsoup4
+        # הוספנו כאן את ספריית pytz לחישוב שעון ישראל
+        run: pip install yfinance pytz
 
       - name: Run update script
         run: python update_prices.py
@@ -28,7 +28,7 @@ jobs:
         run: |
           git config --global user.name "GitHub Action"
           git config --global user.email "action@github.com"
-          # כאן אנחנו אומרים לו לשמור את כל 3 הקבצים!
-          git add prices.json index.html price_history.csv
-          git commit -m "Update prices and database [skip ci]" || exit 0
+          # הוספנו כאן הוראה לשמור גם את קובץ ה-index.html
+          git add prices.json index.html
+          git commit -m "Update prices and HTML [skip ci]" || exit 0
           git push
