@@ -1,32 +1,32 @@
 {
     "Gold": {
-        "price": 4677.7,
-        "change": 0.24,
-        "updated_at": "2026-04-06 10:43:49"
+        "price": 4720.9,
+        "change": 1.17,
+        "updated_at": "2026-04-06 11:57:59"
     },
     "Silver": {
-        "price": 72.04,
-        "change": -0.08,
-        "updated_at": "2026-04-06 10:43:49"
+        "price": 73.27,
+        "change": 1.62,
+        "updated_at": "2026-04-06 11:57:59"
     },
     "Platinum": {
-        "price": 1974.8,
-        "change": 0.18,
-        "updated_at": "2026-04-06 10:43:49"
+        "price": 2007.0,
+        "change": 1.81,
+        "updated_at": "2026-04-06 11:57:59"
     },
     "Palladium": {
-        "price": 1515.5,
-        "change": 0.56,
-        "updated_at": "2026-04-06 10:43:49"
+        "price": 1525.5,
+        "change": 1.23,
+        "updated_at": "2026-04-06 11:57:59"
     },
     "USDILS": {
-        "price": 3.1305,
-        "change": -0.08,
-        "updated_at": "2026-04-06 10:43:49"
+        "price": 3.1341,
+        "change": 0.04,
+        "updated_at": "2026-04-06 11:57:59"
     },
     "Gold_Silver_Ratio": {
-        "price": 64.93,
-        "change": 0.32,
-        "updated_at": "2026-04-06 10:43:49"
+        "price": 64.43,
+        "change": -0.45,
+        "updated_at": "2026-04-06 11:57:59"
     }
 }
